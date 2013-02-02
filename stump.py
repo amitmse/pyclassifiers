@@ -54,17 +54,16 @@ class Stump(BinaryClassifier):
         Find the optimal split point
         """
         # train
-        self.thresh = Threshold([x[0] for x in X], 
+        self.thresh = Threshold([x[0] for x in X],
                                 [y == self.hit for y in Y])
         # population confusion matrix
         self.evaluate(X, Y)
 
-    def score_one(self, x):
+    def score(self, x):
         return x[0]
 
-    def classify_one(self, x):
-        is_hit = self.thresh.hit_or_miss(self.score_one(x))
-        return self.hit if is_hit else self.miss
+    def classify(self, x):
+        return self.hit if self.thresh.is_hit(self.score(x)) else self.miss
 
 
 if __name__ == '__main__':

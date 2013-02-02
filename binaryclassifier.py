@@ -51,15 +51,15 @@ class BinaryClassifier(object):
     def train(self, X, Y):
         raise NotImplementedError
 
-    def classify(self, X):
+    def classify_all(self, X):
         """
         Classify a vector of continuous values
         """
         for x in X:
-            yield self.classify_one(x)
+            yield self.classify(x)
 
     #FIXME implement me!
-    def classify_one(self, x):
+    def classify(self, x):
         raise NotImplementedError
 
     def evaluate(self, X, Y):
@@ -71,7 +71,7 @@ class BinaryClassifier(object):
         self.tn = 0
         self.fp = 0
         self.fn = 0
-        for (guess, answer) in zip(self.classify(X), Y):
+        for (guess, answer) in zip(self.classify_all(X), Y):
             self.update_confusion_matrix(guess, answer)
 
     def update_confusion_matrix(self, guess, answer):
@@ -96,10 +96,10 @@ class BinaryClassifier(object):
         self.fn = 0
         for i in xrange(1, len(Y)):
             self.train(X[:i] + X[i + 1:], Y[:i] + Y[i + 1:])
-            self.update_confusion_matrix(self.classify_one(X[i]), Y[i])
+            self.update_confusion_matrix(self.classify(X[i]), Y[i])
 
     #FIXME implement me!
-    def score_one(self, x):
+    def score(self, x):
         raise NotImplementedError
 
     def AUC(self, X, Y):
@@ -117,8 +117,8 @@ class BinaryClassifier(object):
             self.train(X[:i] + X[i + 1:j] + X[j + 1:],
                        Y[:i] + Y[i + 1:j] + Y[j + 1:])
             # score the happenings
-            i_score = self.score_one(X[i])
-            j_score = self.score_one(X[j])
+            i_score = self.score(X[i])
+            j_score = self.score(X[j])
             if i_score == j_score: # tie
                 continue
             hit_gt_miss += xor(Y[i] == self.hit, i_score < j_score)
@@ -214,7 +214,7 @@ class Threshold(object):
             # store the score for comparison at next iteration
             prev_s = s
 
-    def hit_or_miss(self, score):
+    def is_hit(self, score):
         return xor(score < self.split, self.hit_upper)
 
 

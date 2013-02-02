@@ -40,30 +40,11 @@ class Perceptron(BinaryClassifier):
     >>> from random import seed
     >>> seed(62485)
 
-    # OR
-    >>> X = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
-    >>> Y = [-1, 1, 1, 1]
-    >>> Perceptron(X, Y, 1).W
-    [1.0, 1.0, 1.0]
-    >>> PerceptronWithDropout(X, Y, 1).accuracy()
-    1.0
-
-    # XOR: can't be learned fully
-    >>> X = [[-1, -1], [-1, 1], [1, -1], [1, 1]]
-    >>> Y = [-1, 1, 1, -1]
-    >>> Perceptron(X, Y, 1).accuracy()
-    0.75
-    >>> PerceptronWithDropout(X, Y, 1).accuracy()
-    0.75
-
     # read in Iris data and score
     >>> from csv import DictReader
     >>> X = []
     >>> Y = []
     >>> for row in DictReader(open('iris.csv', 'r')):
-    ...     species = row['Species']
-    ...     if species == 'setosa':
-    ...         continue
     ...     X.append([float(row['Sepal.Length']),
     ...               float(row['Sepal.Width']),
     ...               float(row['Petal.Length']), 
@@ -72,15 +53,7 @@ class Perceptron(BinaryClassifier):
     >>> p = Perceptron(X, Y, 'versicolor')
     >>> p.leave_one_out(X, Y)
     >>> round(p.accuracy(), 2)
-    0.95
-    >>> round(p.precision(), 2)
-    0.98
     >>> round(p.AUC(X, Y), 2)
-    0.77
-    >>> p = PerceptronWithDropout(X, Y, 'versicolor', 0.1)
-    >>> p.leave_one_out(X, Y)
-    >>> round(p.accuracy(), 2)
-    0.98
     """
 
     def __repr__(self):
@@ -104,7 +77,7 @@ class Perceptron(BinaryClassifier):
         for i in xrange(n_iter):
             while True:
                 (x, y) = choice(zip(X, Y))
-                if self.classify_one(x) == y:
+                if self.classify(x) == y:
                     run_W += 1
                     if run_W > run_P:
                         self.evaluate(X, Y) # check current values
@@ -124,11 +97,11 @@ class Perceptron(BinaryClassifier):
         # population confusion matrix
         self.evaluate(X, Y)
 
-    def score_one(self, x):
+    def score(self, x):
         return sum(w * f for w, f in zip(self.W, [1.] + x))
 
-    def classify_one(self, x):
-        return self.hit if self.score_one(x) > 0. else self.miss
+    def classify(self, x):
+        return self.hit if self.score(x) > 0. else self.miss
 
 ## perceptron with dropout
 
@@ -148,9 +121,6 @@ class Coin(object):
         return 1 if random() < self.p_heads else 0
 
     def flip(self):
-        """
-        It never stops!
-        """
         while True:
             yield self.flip_once()
 
@@ -158,12 +128,24 @@ class Coin(object):
 class PerceptronWithDropout(Perceptron):
     """
     Compute a binary classifier using the "pocket", "rachet", and "dropout"
-    variant of a single-layer perceptron. The "dropout" technique 
-    prevents bizarree schemes of co-adaptation and is based loosely on:
+    variant of a single-layer perceptron. "Dropout" potentially prevents
+    bizarre schemes of co-adaptation and is based loosely on:
 
     G.E. Hinton, N.  Srivastava, A. Krizhevsky, I. Sutskever & R.R. 
     Salakhutdinov. 2012. Improving neural networks by preventing 
     co-adaptation of feature detectors. Ms., University of Toronto.
+
+    >>> from csv import DictReader
+    >>> X = []
+    >>> Y = []
+    >>> for row in DictReader(open('iris.csv', 'r')):
+    ...     X.append([float(row['Sepal.Length']),
+    ...               float(row['Sepal.Width']),
+    ...               float(row['Petal.Length']), 
+    ...               float(row['Petal.Width'])])
+    ...     Y.append(row['Species'])
+    >>> round(p.accuracy(), 2)
+    >>> round(p.AUC(X, Y), 2)
     """
 
     def __init__(self, X, Y, hit, p_dropout=.5):
@@ -194,9 +176,9 @@ class PerceptronWithDropout(Perceptron):
             while True:
                 (x, y) = choice(zip(X, Y))
                 # <FIXME do we use dropout while scoring, ever? No.
-                #if self.classify_one(self._dropout(x)) == y:
+                #if self.classify(self._dropout(x)) == y:
                 #  FIXME />
-                if self.classify_one(x) == y:
+                if self.classify(x) == y:
                     run_W += 1
                     if run_W > run_P:
                         self.evaluate(X, Y) # check current values

@@ -74,17 +74,16 @@ class LDA(BinaryClassifier):
         md = mu_hit - mu_miss
         # compute weights
         self.W = dot(inv(cov(table[self.hit]) + cov(table[self.miss])), md)
-        self.thresh = Threshold([self.score_one(x) for x in X],
+        self.thresh = Threshold([self.score(x) for x in X],
                                 [y == self.hit for y in Y])
         # population confusion matrix
         self.evaluate(X, Y)
         
-    def score_one(self, x):
+    def score(self, x):
         return sum(w * f for w, f in zip(self.W, x))
 
-    def classify_one(self, x):
-        is_hit = self.thresh.hit_or_miss(self.score_one(x))
-        return self.hit if is_hit else self.miss
+    def classify(self, x):
+        return self.hit if self.thresh.is_hit(self.score(x)) else self.miss
 
 
 if __name__ == '__main__':
