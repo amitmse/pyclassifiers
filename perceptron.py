@@ -53,7 +53,9 @@ class Perceptron(BinaryClassifier):
     >>> p = Perceptron(X, Y, 'versicolor')
     >>> p.leave_one_out(X, Y)
     >>> round(p.accuracy(), 2)
+    0.98
     >>> round(p.AUC(X, Y), 2)
+    0.99
     """
 
     def __repr__(self):
@@ -144,8 +146,11 @@ class PerceptronWithDropout(Perceptron):
     ...               float(row['Petal.Length']), 
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
+    >>> p = PerceptronWithDropout(X, Y, 'versicolor', .1)
     >>> round(p.accuracy(), 2)
+    0.97
     >>> round(p.AUC(X, Y), 2)
+    0.99 
     """
 
     def __init__(self, X, Y, hit, p_dropout=.5):
