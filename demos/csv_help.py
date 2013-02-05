@@ -24,6 +24,14 @@
 # csv_help.py: some helper methods for dealing with CSV files
 
 from csv import DictReader
+from collections import defaultdict
+
+def table(X, Y):
+    d = defaultdict(list)
+    for (X, Y) in zip(X, Y):
+        d[Y].append(X)
+    return d.values()
+    
 
 def read_csv(fid, drop_NA=[]):
     """
@@ -43,3 +51,6 @@ def read_csv(fid, drop_NA=[]):
                 pass
             data[key].append(val)
     return data
+
+def rotate(X):
+    return [list(i) for i in zip(*X)]

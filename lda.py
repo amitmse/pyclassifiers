@@ -68,12 +68,10 @@ class LDA(BinaryClassifier):
         # transpose columns in table
         for col in (self.hit, self.miss):
             table[col] = zip(*table[col])
-        # compute difference in means
-        mu_hit  = mean(table[self.hit],  axis=1)
-        mu_miss = mean(table[self.miss], axis=1)
-        md = mu_hit - mu_miss
         # compute weights
-        self.W = dot(inv(cov(table[self.hit]) + cov(table[self.miss])), md)
+        self.W = dot(inv(cov(table[self.hit]) + cov(table[self.miss])),
+                     mean(table[self.hit],  axis=1) -
+                     mean(table[self.miss], axis=1))
         self.thresh = Threshold([self.score(x) for x in X],
                                 [y == self.hit for y in Y])
         # population confusion matrix

@@ -150,7 +150,7 @@ class PerceptronWithDropout(Perceptron):
     >>> round(p.accuracy(), 2)
     0.97
     >>> round(p.AUC(X, Y), 2)
-    0.99 
+    0.99
     """
 
     def __init__(self, X, Y, hit, p_dropout=.5):
