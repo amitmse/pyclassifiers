@@ -59,8 +59,8 @@ class Perceptron(BinaryClassifier):
     """
 
     def __repr__(self):
-        weight = ', '.join(str(round(i, 3)) for i in self.W)
-        return 'Perceptron({})'.format(weight)
+        W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
+        return 'Perceptron({})'.format(W)
 
     def train(self, X, Y, n_iter=200):
         """

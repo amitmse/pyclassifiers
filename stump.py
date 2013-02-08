@@ -54,8 +54,8 @@ class Stump(BinaryClassifier):
         upper = self.hit
         if not self.thresh.hit_upper:
             (lower, upper) = (upper, lower)
-        return 'Stump({} < {:.5} < {})'.format(lower, self.thresh.split,
-                                               upper)
+        return 'Stump({} < {: 02.3f} < {})'.format(lower, 
+                                            self.thresh.split, upper)
 
     def train(self, X, Y):
         """

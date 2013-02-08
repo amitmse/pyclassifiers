@@ -52,7 +52,7 @@ class LDA(BinaryClassifier):
     """
 
     def __repr__(self):
-        W = ', '.join('{:.3}'.format(w) for w in self.W)
+        W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
         return 'LDA({})'.format(W)
 
     def train(self, X, Y):
