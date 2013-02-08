@@ -44,7 +44,7 @@ class Stump(BinaryClassifier):
     >>> s = Stump(X, Y, 'versicolor')
     >>> s.leave_one_out(X, Y)
     >>> round(s.accuracy(), 2)
-    0.94
+    0.88
     >>> round(s.AUC(X, Y), 2)
     0.99
     """
@@ -64,8 +64,6 @@ class Stump(BinaryClassifier):
         # train
         self.thresh = Threshold([x[0] for x in X],
                                 [y == self.hit for y in Y])
-        # population confusion matrix
-        self.evaluate(X, Y)
 
     def score(self, x):
         return x[0]

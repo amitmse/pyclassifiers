@@ -53,7 +53,7 @@ class Perceptron(BinaryClassifier):
     >>> p = Perceptron(X, Y, 'versicolor')
     >>> p.leave_one_out(X, Y)
     >>> round(p.accuracy(), 2)
-    0.98
+    0.96
     >>> round(p.AUC(X, Y), 2)
     0.99
     """
@@ -147,8 +147,9 @@ class PerceptronWithDropout(Perceptron):
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> p = PerceptronWithDropout(X, Y, 'versicolor', .1)
+    >>> p.leave_one_out(X, Y)
     >>> round(p.accuracy(), 2)
-    0.97
+    0.94
     >>> round(p.AUC(X, Y), 2)
     0.99
     """
@@ -180,9 +181,6 @@ class PerceptronWithDropout(Perceptron):
         for i in xrange(n_iter):
             while True:
                 (x, y) = choice(zip(X, Y))
-                # <FIXME do we use dropout while scoring, ever? No.
-                #if self.classify(self._dropout(x)) == y:
-                #  FIXME />
                 if self.classify(x) == y:
                     run_W += 1
                     if run_W > run_P:

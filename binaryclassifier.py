@@ -124,28 +124,40 @@ class BinaryClassifier(object):
             hit_gt_miss += xor(Y[i] == self.hit, i_score < j_score)
             denominator += 1
         # compute area
-        # FIXME zero division possible?
+        if denominator == 0: # worthless (avoids a zero division exception)
+            return .5
         AUC = hit_gt_miss / float(denominator)
         if AUC < .5: # swap hits and misses
             AUC = 1. - AUC
         return AUC
 
     def precision(self):
-        return self.tp / float(self.tp + self.fp)
+        denom = self.tp + self.fp
+        if not denom:   
+            return float('nan')
+        return self.tp / float(denom)
     
     def recall(self):
-        return self.tp / float(self.tp + self.fn)
+        denom = self.tp + self.fn
+        if not denom:
+            return float('nan')
+        return self.tp / float(denom)
     
     # alias for recall
     def sensitivity(self):
         return self.recall()
 
     def specificity(self):
-        return self.tn / float(self.tn + self.fp)
+        denom = self.tn + self.fp
+        if not denom:
+            return float('nan')
+        return self.tn / float(denom)
 
     def accuracy(self):
-        numerator = float(self.tp + self.tn)
-        return numerator / (numerator + self.fp + self.fn)
+        numer = self.tp + self.fn
+        if not numer:
+            return 0.
+        return numer/ float(numer + self.fp + self.fn)
 
     def F1(self):
         p = self.precision()
@@ -157,10 +169,10 @@ class BinaryClassifier(object):
         S = (self.tp + self.fn) / N
         P = (self.tp + self.fp) / N
         PS = P * S
-        try:
-            return ((self.tp / N) - PS) / sqrt(PS * (1. - S) * (1. - P))
-        except ZeroDivisionError:
+        denom = sqrt(PS * (1. - S) * (1. - P))
+        if denom == 0:
             return float('nan')
+        return ((self.tp / N) - PS) / denom
 
 # a class representing a numerical threshold; stump.Stump is little
 # more than a wrapper around this, but it is also used by LDA

@@ -3,6 +3,7 @@
 # Kyle Gorman <gormanky@ohsu.edu>
 
 def score_me(model, X, Y):
+    print model
     print 'AUC:         {:.3}'.format(model.AUC(X, Y))
     model.leave_one_out(X, Y)
     print 'Accuracy:    {:.3}'.format(model.accuracy())

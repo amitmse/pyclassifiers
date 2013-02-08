@@ -21,16 +21,18 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # 
-# lda.py: classification using a traditional linear discriminant
+# logistic_regression.py: classification using logistic regression
 
-from numpy.linalg import inv
-from numpy import cov, mean, dot
+from numpy.linalg import pinv
+from numpy import allclose, array, dot, exp, zeros
 
-from binaryclassifier import BinaryClassifier, Threshold
+from binaryclassifier import BinaryClassifier
 
-class LDA(BinaryClassifier):
+_QUASITHRESH = 2
+
+class LogisticRegression(BinaryClassifier):
     """
-    Compute a linear discriminant classifier
+    Compute a logistic regression classifier
 
     # read in Iris data and score
     >>> from csv import DictReader
@@ -42,39 +44,54 @@ class LDA(BinaryClassifier):
     ...               float(row['Petal.Length']), 
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
-    >>> L = LDA(X, Y, 'versicolor')
+
+    >>> L = LogisticRegression(X, Y, 'versicolor')
     >>> L.leave_one_out(X, Y)
     >>> round(L.accuracy(), 2)
     0.94
     >>> round(L.AUC(X, Y), 2)
-    1.0
-
+    0.99
     """
 
     def __repr__(self):
-        W = ', '.join('{:.3}'.format(w) for w in self.W)
-        return 'LDA({})'.format(W)
+        W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
+        return 'LogisticRegression({})'.format(W)
 
-    def train(self, X, Y):
-        # construct table of values
-        table = {self.hit: [], self.miss: []}
-        for (x, y) in zip(X, Y):
-            table[y].append(x)
-        # transpose columns in table
-        for col in (self.hit, self.miss):
-            table[col] = zip(*table[col])
-        # compute weights
-        self.W = dot(inv(cov(table[self.hit]) + cov(table[self.miss])),
-                                   mean(table[self.hit],  axis=1) -
-                                   mean(table[self.miss], axis=1))
-        self.thresh = Threshold([self.score(x) for x in X],
-                                [y == self.hit for y in Y])
-        
+    @staticmethod
+    def logis(alpha):
+        ex = exp(alpha)
+        return ex / (1. + ex)
+
+    @staticmethod
+    def Newton_Raphson(X, Y, n_iter=100):
+        Xt = X.T
+        W = zeros(X.shape[0])
+        for i in xrange(n_iter):
+            old_W = W
+            p = LogisticRegression.logis(dot(W, X))
+            dXdY = dot(X, Y - p)
+            J_bar = dot(X * (p * (1. - p)), Xt)
+            W = old_W + dot(pinv(dot(X * (p * (1. - p)), Xt)), dXdY)
+            # check for convergence
+            if allclose(W, old_W):
+                return W
+            # check for separation
+            if len(Xt) - sum(Y == (p >= .5)) < _QUASITHRESH:
+                return W
+        # no convergence reached!
+        raise ValueError('Convergence failure')
+
+    def train(self, X, Y, n_iter=100):
+        self.W = LogisticRegression.Newton_Raphson(
+                       array([[1.] + x for x in X]).T,
+                       array([int(y == self.hit) for y in Y]),
+                       n_iter=n_iter)
+
     def score(self, x):
-        return sum(w * f for w, f in zip(self.W, x))
+        return dot(self.W, array([1.] + x))
 
     def classify(self, x):
-        return self.hit if self.thresh.is_hit(self.score(x)) else self.miss
+        return self.hit if self.score(x) > 0. else self.miss
 
 
 if __name__ == '__main__':
