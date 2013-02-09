@@ -47,13 +47,12 @@ class LogisticRegression(BinaryClassifier):
     ...               float(row['Petal.Length']), 
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
-
     >>> L = LogisticRegression(X, Y, 'versicolor')
     >>> L.leave_one_out(X, Y)
     >>> round(L.accuracy(), 2)
     0.94
-    >>> round(L.AUC(X, Y), 3)
-    0.995
+    >>> round(L.AUC(X, Y), 2)
+    1.0
     """
 
     def __repr__(self):
@@ -68,26 +67,28 @@ class LogisticRegression(BinaryClassifier):
     @staticmethod
     def Newton_Raphson(X, Y, n_iter=100):
         Xt = X.T
-        W = zeros(X.shape[0])    # weights
-        old_L = float('-inf')    # log-likelihood of previous iteration
+        W = zeros(X.shape[0])       # weights
+        old_L = float('-inf')       # log-likelihood of previous iteration
         for i in xrange(n_iter):
             # probabilities that each observation is a hit
-            p = LogisticRegression.logis(dot(W, X))
-            # (quasi)separation
-            if any(p == 0.) or any(p == 1.):
-                return old_W
-            # readjust your expectations of "what's old", as you age
+            P = LogisticRegression.logis(dot(W, X))
+            # check for (quasi)separation
+            for p in P:
+                if p == 0. or p == 1.:
+                    return old_W
+            # adjust your expectations of what it means to be "old"
             old_W = W
             # first derivative
-            dXdY = dot(X, Y - p) 
+            dXdY = dot(X, Y - P)
             # magic update
-            W = old_W + dot(inv(dot(X * (p * (1. - p)), Xt)), dXdY)
-            # check for convergence using log-likelihood change
-            L = sum(Y * log(p) + (1. - Y) * log(1. - p))
+            W = old_W + dot(inv(dot(X * (P * (1. - P)), Xt)), dXdY)
+            # compute log-likelihood
+            L = sum(Y * log(P) + (1. - Y) * log(1. - P))
+            # check for convergence by looking for a stable log-likelihood
             if old_L + _TOL > L:
                 return W
             old_L = L
-        # no convergence reached!
+        # no convergence reached
         raise ValueError('Convergence failure')
 
     def train(self, X, Y, n_iter=100):

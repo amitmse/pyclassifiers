@@ -52,9 +52,9 @@ class Stump(BinaryClassifier):
     def __repr__(self):
         lower = self.miss
         upper = self.hit
-        if not self.thresh.hit_upper:
+        if not self.thresh.hit_upper: # swap
             (lower, upper) = (upper, lower)
-        return 'Stump({} < {: 02.3f} < {})'.format(lower, 
+        return 'Stump({} < {: 02.3f} < {})'.format(lower,
                                             self.thresh.split, upper)
 
     def train(self, X, Y):

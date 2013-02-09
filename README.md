@@ -29,9 +29,8 @@ the threshold is chosen to maximize classification accuracy.
 `logistic_regression.py`
 ========================
 
-Classifier based on a logistic regression model estimated by the Newton-
-Raphson algorithm. Some tricky stuff needed to be done to deal with the 
-spectre of (quasi)separability.
+Classifier based on a logistic regression model using the Newton-Raphson
+algorithm. Some tricky stuff deals with the spectre of (quasi)separability.
 
 `perceptron.py`
 ===============
