@@ -23,16 +23,19 @@
 # 
 # logistic_regression.py: classification using logistic regression
 
-from numpy.linalg import pinv
-from numpy import allclose, array, dot, exp, zeros
+from numpy.linalg import inv
+from numpy import allclose, array, dot, exp, log, zeros
 
 from binaryclassifier import BinaryClassifier
 
-_QUASITHRESH = 2
+_TOL = 1.e-7
 
 class LogisticRegression(BinaryClassifier):
     """
-    Compute a logistic regression classifier
+    Compute a logistic regression classifier, stopping estimation when
+    log-likelihood is stable, or when at least one training observation 
+    hits ceiling or floor probability. This is loosely based on code by 
+    Jeffrey Whitaker.
 
     # read in Iris data and score
     >>> from csv import DictReader
@@ -49,8 +52,8 @@ class LogisticRegression(BinaryClassifier):
     >>> L.leave_one_out(X, Y)
     >>> round(L.accuracy(), 2)
     0.94
-    >>> round(L.AUC(X, Y), 2)
-    0.99
+    >>> round(L.AUC(X, Y), 3)
+    0.995
     """
 
     def __repr__(self):
@@ -65,19 +68,25 @@ class LogisticRegression(BinaryClassifier):
     @staticmethod
     def Newton_Raphson(X, Y, n_iter=100):
         Xt = X.T
-        W = zeros(X.shape[0])
+        W = zeros(X.shape[0])    # weights
+        old_L = float('-inf')    # log-likelihood of previous iteration
         for i in xrange(n_iter):
-            old_W = W
+            # probabilities that each observation is a hit
             p = LogisticRegression.logis(dot(W, X))
-            dXdY = dot(X, Y - p)
-            J_bar = dot(X * (p * (1. - p)), Xt)
-            W = old_W + dot(pinv(dot(X * (p * (1. - p)), Xt)), dXdY)
-            # check for convergence
-            if allclose(W, old_W):
+            # (quasi)separation
+            if any(p == 0.) or any(p == 1.):
+                return old_W
+            # readjust your expectations of "what's old", as you age
+            old_W = W
+            # first derivative
+            dXdY = dot(X, Y - p) 
+            # magic update
+            W = old_W + dot(inv(dot(X * (p * (1. - p)), Xt)), dXdY)
+            # check for convergence using log-likelihood change
+            L = sum(Y * log(p) + (1. - Y) * log(1. - p))
+            if old_L + _TOL > L:
                 return W
-            # check for separation
-            if len(Xt) - sum(Y == (p >= .5)) < _QUASITHRESH:
-                return W
+            old_L = L
         # no convergence reached!
         raise ValueError('Convergence failure')
 

@@ -18,22 +18,29 @@ something I need right now.
 =====================
 
 An abstract base class for binary classifiers; also includes a complex
-thresholding class used by many classifiers
+thresholding class used by many classifiers.
 
 `lda.py`
 ========
 
-Traditional linear discriminant analysis using the covariance matrix, 
-with the threshold is chosen to maximize classification accuracy.
+Traditional linear discriminant analysis using the covariance matrix, with
+the threshold is chosen to maximize classification accuracy.
+
+`logistic_regression.py`
+========================
+
+Classifier based on a logistic regression model estimated by the Newton-
+Raphson algorithm. Some tricky stuff needed to be done to deal with the 
+spectre of (quasi)separability.
 
 `perceptron.py`
 ===============
 
-A perceptron classifier which is trained with "ratchet" and "pocket";
-this will be of less interest to people interested in the renowned
-online learning characteristics of the perceptron, but of more interest
-to those interested in good classification. There is also the option to
-use Hinton-style "dropout" so as to prevent bizarre co-adaptation.
+A perceptron classifier which is trained with "ratchet" and "pocket"; this
+will be of less interest to people interested in the renowned online 
+learning characteristics of the perceptron, but of more interest to those 
+interested in good classification. There is also the option to use 
+Hinton-style "dropout" so as to prevent bizarre co-adaptation.
 
 `stump.py`
 ==========
