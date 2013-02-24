@@ -55,7 +55,6 @@ class Perceptron(BinaryClassifier):
     0.95
     >>> round(AUC(Perceptron, X, Y), 2)
     0.99
-    >>> p
     """
 
     def __repr__(self):
