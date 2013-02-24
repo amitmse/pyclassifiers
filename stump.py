@@ -25,9 +25,8 @@
 # variable X (represented as number), find a split-point which minimizes 
 # classification error, and report classification statistics
 
-from math import sqrt
+from binaryclassifier import BinaryClassifier, Threshold, NINF
 
-from binaryclassifier import BinaryClassifier, Threshold
 
 class Stump(BinaryClassifier):
     """
@@ -36,37 +35,46 @@ class Stump(BinaryClassifier):
     so as to maximize the number of correct classifications
 
     >>> from csv import DictReader
+    >>> from binaryclassifier import AUC
     >>> X = []
     >>> Y = []
     >>> for row in DictReader(open('iris.csv', 'r')):
-    ...     X.append([float(row['Petal.Width'])])
+    ...     X.append([float(row['Sepal.Length']),
+    ...               float(row['Sepal.Width']),
+    ...               float(row['Petal.Length']), 
+    ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> s = Stump(X, Y, 'versicolor')
-    >>> s.leave_one_out(X, Y)
-    >>> round(s.accuracy(), 2)
-    0.88
-    >>> round(s.AUC(X, Y), 2)
-    0.99
+    >>> cm = s.leave_one_out(X, Y)
+    >>> round(cm.accuracy, 2)
+    0.87
+    >>> round(AUC(Stump, X, Y), 2)
+    0.98
     """
 
     def __repr__(self):
-        lower = self.miss
-        upper = self.hit
-        if not self.thresh.hit_upper: # swap
-            (lower, upper) = (upper, lower)
-        return 'Stump({} < {: 02.3f} < {})'.format(lower,
-                                            self.thresh.split, upper)
+        return 'Stump({}, {})'.format(self.best_col, self.thresh)
 
     def train(self, X, Y):
         """
         Find the optimal split point
         """
-        # train
-        self.thresh = Threshold([x[0] for x in X],
-                                [y == self.hit for y in Y])
+        # init w/ leftmost column
+        self.best_col = None # index of most informative column in X
+        best_accuracy = NINF
+        # go through other columns
+        for (i, col) in enumerate(zip(*X)):
+            thresh = Threshold(col, Y, self.hit)
+            accuracy = thresh.accuracy
+            if accuracy > best_accuracy:
+                self.thresh = thresh
+                self.best_col = i
+                best_accuracy = accuracy
+                if best_accuracy == 1.: # separable
+                    return
 
     def score(self, x):
-        return x[0]
+        return x[self.best_col]
 
     def classify(self, x):
         return self.hit if self.thresh.is_hit(self.score(x)) else self.miss

@@ -28,12 +28,14 @@ from numpy import cov, mean, dot
 
 from binaryclassifier import BinaryClassifier, Threshold
 
+# user classes
+
 class LDA(BinaryClassifier):
     """
     Compute a linear discriminant classifier
 
-    # read in Iris data and score
     >>> from csv import DictReader
+    >>> from binaryclassifier import AUC
     >>> X = []
     >>> Y = []
     >>> for row in DictReader(open('iris.csv', 'r')):
@@ -43,12 +45,11 @@ class LDA(BinaryClassifier):
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> L = LDA(X, Y, 'versicolor')
-    >>> L.leave_one_out(X, Y)
-    >>> round(L.accuracy(), 2)
-    0.94
-    >>> round(L.AUC(X, Y), 2)
+    >>> cm = L.leave_one_out(X, Y)
+    >>> round(cm.accuracy, 2)
+    0.97
+    >>> round(AUC(LDA, X, Y), 2)
     1.0
-
     """
 
     def __repr__(self):
@@ -65,10 +66,9 @@ class LDA(BinaryClassifier):
             table[col] = zip(*table[col])
         # compute weights
         self.W = dot(inv(cov(table[self.hit]) + cov(table[self.miss])),
-                                   mean(table[self.hit],  axis=1) -
-                                   mean(table[self.miss], axis=1))
-        self.thresh = Threshold([self.score(x) for x in X],
-                                [y == self.hit for y in Y])
+                             mean(table[self.hit],  axis=1) -
+                             mean(table[self.miss], axis=1))
+        self.thresh = Threshold((self.score(x) for x in X), Y, self.hit)
         
     def score(self, x):
         return sum(w * f for w, f in zip(self.W, x))

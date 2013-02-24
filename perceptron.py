@@ -27,7 +27,7 @@ from random import choice, random
 
 from binaryclassifier import BinaryClassifier
 
-## normal perceptron
+# user functions
 
 class Perceptron(BinaryClassifier):
     """
@@ -38,10 +38,9 @@ class Perceptron(BinaryClassifier):
     Transactions on Neural Networks 1: 179-191.
 
     >>> from random import seed
-    >>> seed(62485)
-
-    # read in Iris data and score
     >>> from csv import DictReader
+    >>> from binaryclassifier import AUC
+    >>> seed(62485)
     >>> X = []
     >>> Y = []
     >>> for row in DictReader(open('iris.csv', 'r')):
@@ -51,10 +50,10 @@ class Perceptron(BinaryClassifier):
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> p = Perceptron(X, Y, 'versicolor')
-    >>> p.leave_one_out(X, Y)
-    >>> round(p.accuracy(), 2)
-    0.96
-    >>> round(p.AUC(X, Y), 2)
+    >>> cm = p.leave_one_out(X, Y)
+    >>> round(cm.accuracy, 2)
+    0.95
+    >>> round(AUC(Perceptron, X, Y), 2)
     0.99
     """
 
@@ -82,13 +81,13 @@ class Perceptron(BinaryClassifier):
                 if self.classify(x) == y:
                     run_W += 1
                     if run_W > run_P:
-                        self.evaluate(X, Y) # check current values
-                        cor_W = self.tp + self.tn
+                        cm = self.evaluate(X, Y) # check current values
+                        cor_W = cm.tp + cm.tn
                         if cor_W > cor_P:
                             P = self.W
                             run_P = run_W
                             cor_P = cor_W
-                            if self.fp + self.fn == 0: # separability
+                            if cm.fp + cm.fn == 0: # separability
                                 return
                 else:
                     s = 1 if y == self.hit else -1
@@ -96,8 +95,6 @@ class Perceptron(BinaryClassifier):
                     run_P = 0
                     break
         self.W = P
-        # population confusion matrix
-        self.evaluate(X, Y)
 
     def score(self, x):
         return sum(w * f for w, f in zip(self.W, [1.] + x))
@@ -137,7 +134,10 @@ class PerceptronWithDropout(Perceptron):
     Salakhutdinov. 2012. Improving neural networks by preventing 
     co-adaptation of feature detectors. Ms., University of Toronto.
 
+    >>> from random import seed
     >>> from csv import DictReader
+    >>> from binaryclassifier import AUC
+    >>> seed(62485)
     >>> X = []
     >>> Y = []
     >>> for row in DictReader(open('iris.csv', 'r')):
@@ -147,10 +147,10 @@ class PerceptronWithDropout(Perceptron):
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> p = PerceptronWithDropout(X, Y, 'versicolor', .1)
-    >>> p.leave_one_out(X, Y)
-    >>> round(p.accuracy(), 2)
-    0.94
-    >>> round(p.AUC(X, Y), 2)
+    >>> cm = p.leave_one_out(X, Y)
+    >>> round(cm.accuracy, 2)
+    0.93
+    >>> round(AUC(PerceptronWithDropout, X, Y, p_dropout=.1), 2)
     0.99
     """
 
@@ -184,13 +184,13 @@ class PerceptronWithDropout(Perceptron):
                 if self.classify(x) == y:
                     run_W += 1
                     if run_W > run_P:
-                        self.evaluate(X, Y) # check current values
-                        cor_W = self.tp + self.tn
+                        cm = self.evaluate(X, Y) # check current values
+                        cor_W = cm.tp + cm.tn
                         if cor_W > cor_P:
                             P = self.W
                             run_P = run_W
                             cor_P = cor_W
-                            if self.fp + self.fn == 0: # separability
+                            if cm.fp + cm.fn == 0: # separability
                                 return
                 else:
                     sgn = 1 if y == self.hit else -1
@@ -199,8 +199,6 @@ class PerceptronWithDropout(Perceptron):
                     run_P = 0
                     break
         self.W = P
-        # population confusion matrix
-        self.evaluate(X, Y)
 
     def _dropout(self, x):
         return [d * f for (d, f) in zip(self.coin.flip(), x)]

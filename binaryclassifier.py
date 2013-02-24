@@ -21,12 +21,210 @@
 # TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
 # 
-# contains a binary classification abstract class, and threshold finder that
-# maximizes binary classification accuracy
+# binaryclassifier.py: An abstract class for a binary classifier, a class
+# representing a confusion matrix and associated binary classification 
+# metrics, and a class representing a single-attribute threshold 
+# finder
+# 
+# Thanks to Constantine Lignos for his suggestions on this.
+
+from __future__ import division
 
 from math import sqrt
 from operator import xor
+from collections import Counter
 from itertools import combinations
+
+# constants
+
+NAN = float('nan')
+INF = float('inf')
+NINF = -INF
+
+# user functions
+
+def AUC(model_class, X, Y, **kwargs):
+    """
+    Compute accuracy as measured by area under the ROC curve (AUC)
+    using all-pairs analysis
+    """
+    assert all(len(Y) == len(feat) for feat in zip(*X))
+    assert len(Y) > 1
+    # init base model
+    # select first outcome to be "hit", since it doesn't matter
+    hit = Y[0]
+    m = model_class(X, Y, hit, **kwargs)
+    assert hasattr(m, 'train')
+    # compute U statistic
+    U = 0
+    denom = 0
+    for (i, j) in combinations(xrange(len(Y)), 2):
+        if Y[i] == Y[j]: # tie
+            continue
+        # train on held-out
+        m.train(X[:i] + X[i + 1:j] + X[j + 1:],
+                Y[:i] + Y[i + 1:j] + Y[j + 1:])
+        # score the happenings
+        i_score = m.score(X[i])
+        j_score = m.score(X[j])
+        if i_score == j_score: # tie
+            continue
+        U += xor(Y[i] == hit, i_score < j_score)
+        denom += 1
+    # compute AUC from U
+    U /= denom # now is AUC, though direction may be wrong
+    return (U if U > .5 else 1. - U)
+
+# user classes
+
+class ConfusionMatrix(object):
+    """
+    Binary confusion matrix and various scoring methods
+    
+    To initialize, pass an iterable containing 2-tuples of booleans 
+    specifying for each response whether a hit or a miss was guessed
+    and whether it was in fact a hit or a miss
+    """
+
+    def __repr__(self):
+        return 'ConfusionMatrix(tp = {}, fp = {}, fn = {}, tn = {})'.format(self.tp, self.fp, self.fn, self.tn)
+
+    def __init__(self, iterable):
+        self.tp = 0
+        self.fp = 0
+        self.fn = 0
+        self.tn = 0
+        for (hit_guessed, is_hit) in iterable:
+            if hit_guessed:
+                if is_hit:
+                    self.tp += 1
+                else:
+                    self.fp += 1
+            elif is_hit:
+                self.fn += 1
+            else:
+                self.tn += 1
+
+    def __len__(self):
+        return self.tp + self.fp + self.fn + self.tn
+
+    ## aggregate scores
+
+    @property
+    def accuracy(self):
+        return (self.tp + self.tn) / len(self)
+
+    def Fscore(self, ratio=1.):
+        """
+        F-score, by default F_1; ratio is the importance of recall vs.
+        precision
+        """
+        assert ratio > 0.
+        r_square = ratio * ratio
+        P = self.precision
+        R = self.recall
+        return ((1. + r_square) * P * R) / (r_square * p + r)
+
+    @property
+    def F1(self):
+        return self.Fscore()
+
+    def Sscore(self, ns_ratio=1.):
+        """
+        Same idea as F-score, but defined in terms of specificity and 
+        sensitivity; ratio is the importance of specificity vs. sensitivity
+        """
+        assert ratio > 0.
+        r_square = ratio * ratio
+        Sp = self.specificity
+        Se = self.sensitivity
+        return ((1. + r_square) * Sp * Se) / (r_square * Sp * Se)
+
+    @property
+    def S1(self):
+        return self.Sscore()
+
+    @property
+    def MCC(self):
+        N = len(self)
+        if N == 0:
+            return NAN
+        S = (self.tp + self.fn) / N
+        P = (self.tp + self.fp) / N
+        PS = P * S
+        denom = sqrt(PS * (1. - S) * (1. - P))
+        if denom == 0:
+            return NAN
+        return ((self.tp / N) - PS) / denom
+
+    ## specific scores
+
+    # precision
+
+    @property
+    def precision(self):
+        denom = self.tp + self.fp
+        if denom == 0:
+            return INF
+        return self.tp / denom
+
+    @property
+    def PPV(self):
+        return self.precision()
+
+    # recall
+
+    @property
+    def recall(self):
+        denom = self.tp + self.fn
+        if denom == 0:
+            return INF
+        return self.tp / denom
+
+    @property
+    def sensitivity(self):
+        return self.recall()
+
+    @property
+    def TPR(self):
+        return self.recall()
+
+    # specificity
+
+    @property
+    def specificity(self):
+        denom = self.fp + self.tn
+        if denom == 0:
+            return INF
+        return self.tp / denom
+
+    @property
+    def TNR(self):
+        return self.specificity()
+
+    # others, rarely used
+
+    @property
+    def FPR(self):
+        denom = self.fp + self.tp
+        if denom == 0:
+            return INF
+        return self.fp / denom
+
+    @property
+    def NPV(self):
+        denom = self.tn + self.fn
+        if denom == 0:
+            return INF
+        return self.tn / denom
+
+    @property
+    def FDR(self):
+        denom = self.fp + self.tp
+        if denom == 0:
+            return INF
+        return self.fp / denom
+
 
 class BinaryClassifier(object):
     """
@@ -44,23 +242,20 @@ class BinaryClassifier(object):
             if y != hit:
                 self.miss = y
                 break
-        if self.miss is None:
+        if self.miss == None:
             raise ValueError('Outcomes are invariant')
         self.train(X, Y, **kwargs)
 
     #FIXME implement me!
-    def train(self, X, Y):
+    def score(self, x):
         raise NotImplementedError
-
-    def classify_all(self, X):
-        """
-        Classify a vector of continuous values
-        """
-        for x in X:
-            yield self.classify(x)
 
     #FIXME implement me!
     def classify(self, x):
+        raise NotImplementedError
+
+    #FIXME implement me!
+    def train(self, X, Y):
         raise NotImplementedError
 
     def evaluate(self, X, Y):
@@ -68,167 +263,100 @@ class BinaryClassifier(object):
         Compute scores measuring the classification Y ~ X
         """
         assert all(len(Y) == len(feat) for feat in zip(*X))
-        self.tp = 0
-        self.tn = 0
-        self.fp = 0
-        self.fn = 0
-        for (guess, answer) in zip(self.classify_all(X), Y):
-            self.update_confusion_matrix(guess, answer)
+        return ConfusionMatrix((self.classify(x) == self.hit, 
+                                y == self.hit) for x, y in zip(X, Y))
 
-    def update_confusion_matrix(self, guess, answer):
-        if guess == answer:
-            if guess == self.hit:
-                self.tp += 1
-            else:
-                self.tn += 1
-        elif guess == self.hit: # but is wrong
-            self.fp += 1
-        else:   
-            self.fn += 1
+    def _LOO_gen(self, X, Y):
+        """
+        Generator for leave-one-out cross-validation
+        """
+        for i in xrange(1, len(Y)):
+            self.train(X[:i] + X[i + 1:], Y[:i] + Y[i + 1:])
+            yield self.classify(X[i]) == self.hit, Y[i] == self.hit
 
     def leave_one_out(self, X, Y):
         """
         Score using leave-one-out cross-validation
         """
         assert all(len(Y) == len(feat) for feat in zip(*X))
-        self.tp = 0
-        self.tn = 0
-        self.fp = 0
-        self.fn = 0
-        for i in xrange(1, len(Y)):
-            self.train(X[:i] + X[i + 1:], Y[:i] + Y[i + 1:])
-            self.update_confusion_matrix(self.classify(X[i]), Y[i])
+        return ConfusionMatrix(self._LOO_gen(X, Y))
 
-    #FIXME implement me!
-    def score(self, x):
-        raise NotImplementedError
-
-    def AUC(self, X, Y):
-        """
-        Compute accuracy as measured by area under the ROC curve (AUC) 
-        using all-pairs analysis
-        """
-        assert all(len(Y) == len(feat) for feat in zip(*X))
-        hit_gt_miss = 0
-        denominator = 0
-        for (i, j) in combinations(xrange(len(Y)), 2):
-            if Y[i] == Y[j]: # tie
-                continue
-            # train on held-out
-            self.train(X[:i] + X[i + 1:j] + X[j + 1:],
-                       Y[:i] + Y[i + 1:j] + Y[j + 1:])
-            # score the happenings
-            i_score = self.score(X[i])
-            j_score = self.score(X[j])
-            if i_score == j_score: # tie
-                continue
-            hit_gt_miss += xor(Y[i] == self.hit, i_score < j_score)
-            denominator += 1
-        # compute area
-        if denominator == 0: # worthless (avoids a zero division exception)
-            return .5
-        AUC = hit_gt_miss / float(denominator)
-        if AUC < .5: # swap hits and misses
-            AUC = 1. - AUC
-        return AUC
-
-    def precision(self):
-        denom = self.tp + self.fp
-        if not denom:   
-            return float('nan')
-        return self.tp / float(denom)
-    
-    def recall(self):
-        denom = self.tp + self.fn
-        if not denom:
-            return float('nan')
-        return self.tp / float(denom)
-    
-    # alias for recall
-    def sensitivity(self):
-        return self.recall()
-
-    def specificity(self):
-        denom = self.tn + self.fp
-        if not denom:
-            return float('nan')
-        return self.tn / float(denom)
-
-    def accuracy(self):
-        numer = self.tp + self.fn
-        if not numer:
-            return 0.
-        return numer/ float(numer + self.fp + self.fn)
-
-    def F1(self):
-        p = self.precision()
-        r = self.recall()
-        return 2. * p * r / (p + r)
-
-    def MCC(self):
-        N = float(self.tp + self.tn + self.fp + self.fn)
-        S = (self.tp + self.fn) / N
-        P = (self.tp + self.fp) / N
-        PS = P * S
-        denom = sqrt(PS * (1. - S) * (1. - P))
-        if denom == 0:
-            return float('nan')
-        return ((self.tp / N) - PS) / denom
-
-# a class representing a numerical threshold; stump.Stump is little
-# more than a wrapper around this, but it is also used by LDA
 
 class Threshold(object):
     """
-    Class representing a single split in a continuous vector of data
+    Class representing a single split applied to a vector of continuous
+    data, used to construct classifiers
+
+    # invariant data
+    >>> Threshold([1, 2, 3], ['T', 'T', 'T'], 'T')
+    Threshold(MISS < -inf < HIT)
+
+    # separable data
+    >>> Threshold([1, 2, 3], ['T', 'T', 'F'], 'T')
+    Threshold(HIT < inf < MISS)
+
+    >>> from csv import DictReader
+    >>> S = []
+    >>> Y = []
+    >>> for row in DictReader(open('iris.csv', 'r')):
+    ...     S.append(float(row['Petal.Width']))
+    ...     Y.append(row['Species'])
+    >>> Threshold(S, Y, 'virginica')
+    Threshold(MISS < 1.65 < HIT)
+    >>> Threshold(S, Y, 'versicolor')
+    Threshold(HIT < 1.65 < MISS)
     """
 
-    # static methods 
-
-    @staticmethod
-    def updo(lower, upper):
-        return upper[True] - upper[False] - lower[True] + lower[False]
-
-    # instance methods
-
     def __repr__(self):
-        if self.hit_upper:
-            return 'Threshold(miss < {:.6} < hit)'.format(self.split)
+        if self.upper_is_hit:
+            return 'Threshold(MISS < {} < HIT)'.format(self.split)
         else:
-            return 'Threshold(hit < {:.6} < miss)'.format(self.split)
+            return 'Threshold(HIT < {} < MISS)'.format(self.split)
 
-    def __init__(self, scores, Y):
-        # make sorted copy
-        (my_s, my_Y) = zip(*sorted(zip(scores, Y)))
-        # hits and misses on either side of the threshold
-        lower = {True: 0, False: 0}
-        upper = {True: 0, False: 0}
-        # start with most likely candidate, as the upper side
-        for y in my_Y:
-            upper[y] +=1
-        upl = Threshold.updo(lower, upper)
-        fit = abs(upl)            # score so far
-        self.split = None         # negative infinity...
-        self.hit_upper = upl >= 0 # boolean
-        # run through the split points
-        prev_s = None # negative infinity...
-        for (s, y) in zip(my_s, my_Y):
-            if s != prev_s:
-                # score the previous threshold; otherwise don't bother
-                upl   = Threshold.updo(lower, upper)
-                a_upl = abs(upl)
-                if a_upl > fit:
-                    fit = a_upl
-                    self.split = s
-                    self.hit_upper = upl >= 0
-            # move an observation from upper to lower
-            upper[y] -= 1
-            lower[y] += 1
-            # store the score for comparison at next iteration
-            prev_s = s
+    def __init__(self, S, Y, hit):
+        (my_S, my_Y) = zip(*sorted(zip(S, (y == hit for y in Y))))
+        N = len(my_Y)
+        # initializing at the infinite left edge...
+        self.split = NINF
+        upper_h = sum(my_Y)
+        upper_m = N - upper_h
+        self.upper_is_hit = (upper_h >= upper_m)
+        self.accuracy = abs(upper_h - upper_m) / N # best so far
+        # check for invariance
+        if self.accuracy == 1.:
+            return
+        lower_h = 0
+        lower_m = 0
+        prev_s = my_S[0] # doesn't run the first iteration that way...
+        for (i, y) in enumerate(my_Y):
+            if my_S[i] != prev_s: # scores have changed
+                acc_s = ((upper_h - upper_m) + (lower_m - lower_h)) / N
+                acc = abs(acc_s)
+                if acc > self.accuracy:
+                    # set the split as the mean between the current and 
+                    # next point, a sort of max-margin principle
+                    if i + 1 == N: # end of the line
+                        self.split = INF
+                    else: # normal case
+                        self.split = (my_S[i - 1] + my_S[i]) / 2.
+                    # compute new unscaled best accuracy
+                    self.accuracy = acc
+                    # set which side is up
+                    self.upper_is_hit = (acc_s > 0.)
+                    # check for separability
+                    if self.accuracy == N:
+                        return
+                prev_s = my_S[i]
+            # deal with y
+            if y:
+                upper_h -= 1
+                lower_h += 1
+            else:
+                upper_m -= 1
+                lower_m += 1
 
-    def is_hit(self, score):
-        return xor(score < self.split, self.hit_upper)
+    def is_hit(self, s):
+        return xor(s < self.split, self.upper_is_hit)
 
 
 if __name__ == '__main__':

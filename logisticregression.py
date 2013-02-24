@@ -24,11 +24,15 @@
 # logistic_regression.py: classification using logistic regression
 
 from numpy.linalg import inv
-from numpy import allclose, array, dot, exp, log, zeros
+from numpy import array, dot, exp, log, zeros
 
-from binaryclassifier import BinaryClassifier
+from binaryclassifier import BinaryClassifier, AUC
 
-_TOL = 1.e-7
+# constants
+
+TOL = 1.e-7
+
+# user classes
 
 class LogisticRegression(BinaryClassifier):
     """
@@ -48,10 +52,10 @@ class LogisticRegression(BinaryClassifier):
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> L = LogisticRegression(X, Y, 'versicolor')
-    >>> L.leave_one_out(X, Y)
-    >>> round(L.accuracy(), 2)
-    0.94
-    >>> round(L.AUC(X, Y), 2)
+    >>> cm = L.leave_one_out(X, Y)
+    >>> round(cm.accuracy, 2)
+    0.97
+    >>> round(AUC(LogisticRegression, X, Y), 2)
     1.0
     """
 
@@ -70,7 +74,7 @@ class LogisticRegression(BinaryClassifier):
         W = zeros(X.shape[0])       # weights
         old_L = float('-inf')       # log-likelihood of previous iteration
         for i in xrange(n_iter):
-            # probabilities that each observation is a hit
+            # probability of a "hit" for each observation
             P = LogisticRegression.logis(dot(W, X))
             # check for (quasi)separation
             for p in P:
@@ -85,7 +89,7 @@ class LogisticRegression(BinaryClassifier):
             # compute log-likelihood
             L = sum(Y * log(P) + (1. - Y) * log(1. - P))
             # check for convergence by looking for a stable log-likelihood
-            if old_L + _TOL > L:
+            if old_L + TOL > L:
                 return W
             old_L = L
         # no convergence reached
@@ -93,9 +97,9 @@ class LogisticRegression(BinaryClassifier):
 
     def train(self, X, Y, n_iter=100):
         self.W = LogisticRegression.Newton_Raphson(
-                       array([[1.] + x for x in X]).T,
-                       array([int(y == self.hit) for y in Y]),
-                       n_iter=n_iter)
+                                    array([[1.] + x for x in X]).T,
+                                    array([int(y == self.hit) for y in Y]),
+                                    n_iter=n_iter)
 
     def score(self, x):
         return dot(self.W, array([1.] + x))
