@@ -1,31 +1,31 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright (c) 2013 Kyle Gorman <gormanky@ohsu.edu>
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a 
-# copy of this software and associated documentation files (the 
-# "Software"), to deal in the Software without restriction, including 
-# without limitation the rights to use, copy, modify, merge, publish, 
-# distribute, sublicense, and/or sell copies of the Software, and to 
-# permit persons to whom the Software is furnished to do so, subject to 
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included 
+#
+# The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-# 
+#
 # binaryclassifier.py: An abstract class for a binary classifier, a class
-# representing a confusion matrix and associated binary classification 
-# metrics, and a class representing a single-attribute threshold 
+# representing a confusion matrix and associated binary classification
+# metrics, and a class representing a single-attribute threshold
 # finder
-# 
+#
 # Thanks to Constantine Lignos for his suggestions on this.
 
 from __future__ import division
@@ -43,6 +43,7 @@ NINF = -INF
 
 # user functions
 
+
 def AUC(model_class, X, Y, **kwargs):
     """
     Compute accuracy as measured by area under the ROC curve (AUC)
@@ -59,7 +60,7 @@ def AUC(model_class, X, Y, **kwargs):
     U = 0
     denom = 0
     for (i, j) in combinations(xrange(len(Y)), 2):
-        if Y[i] == Y[j]: # tie
+        if Y[i] == Y[j]:  # tie
             continue
         # train on held-out
         m.train(X[:i] + X[i + 1:j] + X[j + 1:],
@@ -67,21 +68,22 @@ def AUC(model_class, X, Y, **kwargs):
         # score the happenings
         i_score = m.score(X[i])
         j_score = m.score(X[j])
-        if i_score == j_score: # tie
+        if i_score == j_score:  # tie
             continue
         U += xor(Y[i] == hit, i_score < j_score)
         denom += 1
     # compute AUC from U
-    U /= denom # now is AUC, though direction may be wrong
+    U /= denom  # now is AUC, though direction may be wrong
     return (U if U > .5 else 1. - U)
 
 # user classes
 
+
 class ConfusionMatrix(object):
     """
     Binary confusion matrix and various scoring methods
-    
-    To initialize, pass an iterable containing 2-tuples of booleans 
+
+    To initialize, pass an iterable containing 2-tuples of booleans
     specifying for each response whether a hit or a miss was guessed
     and whether it was in fact a hit or a miss
     """
@@ -123,7 +125,7 @@ class ConfusionMatrix(object):
         r_square = ratio * ratio
         P = self.precision
         R = self.recall
-        return ((1. + r_square) * P * R) / (r_square * p + r)
+        return ((1. + r_square) * P * R) / (r_square * P + R)
 
     @property
     def F1(self):
@@ -131,7 +133,7 @@ class ConfusionMatrix(object):
 
     def Sscore(self, ns_ratio=1.):
         """
-        Same idea as F-score, but defined in terms of specificity and 
+        Same idea as F-score, but defined in terms of specificity and
         sensitivity; ratio is the importance of specificity vs. sensitivity
         """
         assert ratio > 0.
@@ -170,7 +172,7 @@ class ConfusionMatrix(object):
 
     @property
     def PPV(self):
-        return self.precision()
+        return self.precision
 
     # recall
 
@@ -183,11 +185,11 @@ class ConfusionMatrix(object):
 
     @property
     def sensitivity(self):
-        return self.recall()
+        return self.recall
 
     @property
     def TPR(self):
-        return self.recall()
+        return self.recall
 
     # specificity
 
@@ -200,7 +202,7 @@ class ConfusionMatrix(object):
 
     @property
     def TNR(self):
-        return self.specificity()
+        return self.specificity
 
     # others, rarely used
 
@@ -230,15 +232,15 @@ class BinaryClassifier(object):
     """
     Dummy class representing a binary classifier
     """
-     
-    #FIXME implement me!
+
+    # FIXME implement me!
     def __repr__(self):
         raise NotImplementedError
 
     def __init__(self, X, Y, hit, **kwargs):
         self.hit = hit
         self.miss = None
-        for y in Y: # figure out what the "miss" is called
+        for y in Y:  # figure out what the "miss" is called
             if y != hit:
                 self.miss = y
                 break
@@ -246,15 +248,15 @@ class BinaryClassifier(object):
             raise ValueError('Outcomes are invariant')
         self.train(X, Y, **kwargs)
 
-    #FIXME implement me!
+    # FIXME implement me!
     def score(self, x):
         raise NotImplementedError
 
-    #FIXME implement me!
+    # FIXME implement me!
     def classify(self, x):
         raise NotImplementedError
 
-    #FIXME implement me!
+    # FIXME implement me!
     def train(self, X, Y):
         raise NotImplementedError
 
@@ -263,7 +265,7 @@ class BinaryClassifier(object):
         Compute scores measuring the classification Y ~ X
         """
         assert all(len(Y) == len(feat) for feat in zip(*X))
-        return ConfusionMatrix((self.classify(x) == self.hit, 
+        return ConfusionMatrix((self.classify(x) == self.hit,
                                 y == self.hit) for x, y in zip(X, Y))
 
     def _LOO_gen(self, X, Y):
@@ -321,23 +323,23 @@ class Threshold(object):
         upper_h = sum(my_Y)
         upper_m = N - upper_h
         self.upper_is_hit = (upper_h >= upper_m)
-        self.accuracy = abs(upper_h - upper_m) / N # best so far
+        self.accuracy = abs(upper_h - upper_m) / N  # best so far
         # check for invariance
         if self.accuracy == 1.:
             return
         lower_h = 0
         lower_m = 0
-        prev_s = my_S[0] # doesn't run the first iteration that way...
+        prev_s = my_S[0]  # doesn't run the first iteration that way...
         for (i, y) in enumerate(my_Y):
-            if my_S[i] != prev_s: # scores have changed
+            if my_S[i] != prev_s:  # scores have changed
                 acc_s = ((upper_h - upper_m) + (lower_m - lower_h)) / N
                 acc = abs(acc_s)
                 if acc > self.accuracy:
-                    # set the split as the mean between the current and 
+                    # set the split as the mean between the current and
                     # next point, a sort of max-margin principle
-                    if i + 1 == N: # end of the line
+                    if i + 1 == N:  # end of the line
                         self.split = INF
-                    else: # normal case
+                    else:  # normal case
                         self.split = (my_S[i - 1] + my_S[i]) / 2.
                     # compute new unscaled best accuracy
                     self.accuracy = acc

@@ -1,26 +1,26 @@
 #!/usr/bin/env python
-# 
+#
 # Copyright (c) 2013 Kyle Gorman <gormanky@ohsu.edu>
-# 
-# Permission is hereby granted, free of charge, to any person obtaining a 
-# copy of this software and associated documentation files (the 
-# "Software"), to deal in the Software without restriction, including 
-# without limitation the rights to use, copy, modify, merge, publish, 
-# distribute, sublicense, and/or sell copies of the Software, and to 
-# permit persons to whom the Software is furnished to do so, subject to 
+#
+# Permission is hereby granted, free of charge, to any person obtaining a
+# copy of this software and associated documentation files (the
+# "Software"), to deal in the Software without restriction, including
+# without limitation the rights to use, copy, modify, merge, publish,
+# distribute, sublicense, and/or sell copies of the Software, and to
+# permit persons to whom the Software is furnished to do so, subject to
 # the following conditions:
-# 
-# The above copyright notice and this permission notice shall be included 
+#
+# The above copyright notice and this permission notice shall be included
 # in all copies or substantial portions of the Software.
-# 
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS 
-# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF 
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. 
-# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY 
-# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT, 
-# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE 
+#
+# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS
+# OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
+# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT.
+# IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY
+# CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN ACTION OF CONTRACT,
+# TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN CONNECTION WITH THE
 # SOFTWARE OR THE USE OR OTHER DEALINGS IN THE SOFTWARE.
-# 
+#
 # logistic_regression.py: classification using logistic regression
 
 from numpy.linalg import inv
@@ -34,11 +34,12 @@ TOL = 1.e-7
 
 # user classes
 
+
 class LogisticRegression(BinaryClassifier):
     """
     Compute a logistic regression classifier, stopping estimation when
-    log-likelihood is stable, or when at least one training observation 
-    hits ceiling or floor probability. This is loosely based on code by 
+    log-likelihood is stable, or when at least one training observation
+    hits ceiling or floor probability. This is loosely based on code by
     Jeffrey Whitaker.
 
     # read in Iris data and score
@@ -48,7 +49,7 @@ class LogisticRegression(BinaryClassifier):
     >>> for row in DictReader(open('iris.csv', 'r')):
     ...     X.append([float(row['Sepal.Length']),
     ...               float(row['Sepal.Width']),
-    ...               float(row['Petal.Length']), 
+    ...               float(row['Petal.Length']),
     ...               float(row['Petal.Width'])])
     ...     Y.append(row['Species'])
     >>> L = LogisticRegression(X, Y, 'versicolor')
@@ -97,9 +98,9 @@ class LogisticRegression(BinaryClassifier):
 
     def train(self, X, Y, n_iter=100):
         self.W = LogisticRegression.Newton_Raphson(
-                                    array([[1.] + x for x in X]).T,
-                                    array([int(y == self.hit) for y in Y]),
-                                    n_iter=n_iter)
+            array([[1.] + x for x in X]).T,
+            array([int(y == self.hit) for y in Y]),
+            n_iter=n_iter)
 
     def score(self, x):
         return dot(self.W, array([1.] + x))

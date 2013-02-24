@@ -1,5 +1,5 @@
-#!/usr/bin/env python -u 
-# Scoring with the perceptron classifier 
+#!/usr/bin/env python -u
+# Scoring with the perceptron classifier
 # Kyle Gorman <gormanky@ohsu.edu>
 
 from itertools import product
@@ -14,9 +14,9 @@ _hit = 'versicolor'
 if __name__ == '__main__':
 
     # read in
-    d = read_csv('iris.csv') # setosa has alread been culled
+    d = read_csv('iris.csv')  # setosa has alread been culled
     X = [col for (lab, col) in d.iteritems() if lab != 'Species']
-    X = [list(t) for t in zip(*X)] # rotate it
+    X = [list(t) for t in zip(*X)]  # rotate it
     Y = d['Species']
 
     print colored('No dropout', 'red')
