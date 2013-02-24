@@ -26,7 +26,7 @@
 from numpy.linalg import inv
 from numpy import cov, mean, dot
 
-from binaryclassifier import BinaryClassifier, Threshold
+from binaryclassifier import AUC, BinaryClassifier, Threshold
 
 # user classes
 
@@ -36,7 +36,6 @@ class LDA(BinaryClassifier):
     Compute a linear discriminant classifier
 
     >>> from csv import DictReader
-    >>> from binaryclassifier import AUC
     >>> X = []
     >>> Y = []
     >>> for row in DictReader(open('iris.csv', 'r')):
@@ -48,14 +47,14 @@ class LDA(BinaryClassifier):
     >>> L = LDA(X, Y, 'versicolor')
     >>> cm = L.leave_one_out(X, Y)
     >>> round(cm.accuracy, 2)
-    0.97
+    0.96
     >>> round(AUC(LDA, X, Y), 2)
     1.0
     """
 
     def __repr__(self):
         W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
-        return 'LDA({})'.format(list(W))
+        return 'LDA(weights=[{}], {})'.format(W, self.thresh)
 
     def train(self, X, Y):
         # construct table of values

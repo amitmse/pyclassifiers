@@ -26,7 +26,7 @@
 from numpy.linalg import inv
 from numpy import array, dot, exp, log, zeros
 
-from binaryclassifier import BinaryClassifier, AUC
+from binaryclassifier import AUC, BinaryClassifier
 
 # constants
 
@@ -62,7 +62,7 @@ class LogisticRegression(BinaryClassifier):
 
     def __repr__(self):
         W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
-        return 'LogisticRegression({})'.format(W)
+        return 'LogisticRegression(betas=[{}])'.format(W)
 
     @staticmethod
     def logis(alpha):

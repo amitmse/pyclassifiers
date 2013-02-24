@@ -65,7 +65,7 @@ def AUC(model_class, X, Y, **kwargs):
         # train on held-out
         m.train(X[:i] + X[i + 1:j] + X[j + 1:],
                 Y[:i] + Y[i + 1:j] + Y[j + 1:])
-        # score the happenings
+        # score the held-out data
         i_score = m.score(X[i])
         j_score = m.score(X[j])
         if i_score == j_score:  # tie
@@ -311,12 +311,13 @@ class Threshold(object):
 
     def __repr__(self):
         if self.upper_is_hit:
-            return 'Threshold(MISS < {} < HIT)'.format(self.split)
+            return 'Threshold(MISS < {:.3} < HIT)'.format(self.split)
         else:
-            return 'Threshold(HIT < {} < MISS)'.format(self.split)
+            return 'Threshold(HIT < {:.3} < MISS)'.format(self.split)
 
     def __init__(self, S, Y, hit):
-        (my_S, my_Y) = zip(*sorted(zip(S, (y == hit for y in Y))))
+        (my_S, my_Y) = (list(i) for i in zip(*sorted(zip(S, 
+                                           (y == hit for y in Y)))))
         N = len(my_Y)
         # initializing at the infinite left edge...
         self.split = NINF
@@ -329,18 +330,17 @@ class Threshold(object):
             return
         lower_h = 0
         lower_m = 0
+        # hacky stuff...
         prev_s = my_S[0]  # doesn't run the first iteration that way...
-        for (i, y) in enumerate(my_Y):
+        my_S.append(INF)           # so the last split point is infinite
+        for (i, y) in enumerate(my_Y, 1):
             if my_S[i] != prev_s:  # scores have changed
                 acc_s = ((upper_h - upper_m) + (lower_m - lower_h)) / N
                 acc = abs(acc_s)
                 if acc > self.accuracy:
                     # set the split as the mean between the current and
                     # next point, a sort of max-margin principle
-                    if i + 1 == N:  # end of the line
-                        self.split = INF
-                    else:  # normal case
-                        self.split = (my_S[i - 1] + my_S[i]) / 2.
+                    self.split = (my_S[i - 1] + my_S[i]) / 2.
                     # compute new unscaled best accuracy
                     self.accuracy = acc
                     # set which side is up

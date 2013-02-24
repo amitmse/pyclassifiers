@@ -25,7 +25,7 @@
 
 from random import choice, random
 
-from binaryclassifier import BinaryClassifier
+from binaryclassifier import AUC, BinaryClassifier
 
 # user functions
 
@@ -40,7 +40,6 @@ class Perceptron(BinaryClassifier):
 
     >>> from random import seed
     >>> from csv import DictReader
-    >>> from binaryclassifier import AUC
     >>> seed(62485)
     >>> X = []
     >>> Y = []
@@ -56,11 +55,12 @@ class Perceptron(BinaryClassifier):
     0.95
     >>> round(AUC(Perceptron, X, Y), 2)
     0.99
+    >>> p
     """
 
     def __repr__(self):
         W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
-        return 'Perceptron({})'.format(W)
+        return 'Perceptron(weights=[{}])'.format(W)
 
     def train(self, X, Y, n_iter=200):
         """
@@ -138,7 +138,6 @@ class PerceptronWithDropout(Perceptron):
 
     >>> from random import seed
     >>> from csv import DictReader
-    >>> from binaryclassifier import AUC
     >>> seed(62485)
     >>> X = []
     >>> Y = []

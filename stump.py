@@ -47,13 +47,13 @@ class Stump(BinaryClassifier):
     >>> s = Stump(X, Y, 'versicolor')
     >>> cm = s.leave_one_out(X, Y)
     >>> round(cm.accuracy, 2)
-    0.87
+    0.88
     >>> round(AUC(Stump, X, Y), 2)
     0.98
     """
 
     def __repr__(self):
-        return 'Stump({}, {})'.format(self.best_col, self.thresh)
+        return 'Stump(col={}, {})'.format(self.best_col, self.thresh)
 
     def train(self, X, Y):
         """
