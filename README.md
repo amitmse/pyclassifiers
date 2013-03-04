@@ -21,15 +21,9 @@ feedback.
 `binaryclassifier.py`
 =====================
 
-An abstract base class for binary classifiers; also includes a complex
-thresholding class used by many classifiers.
-
-`confusionmatrix.py`
-====================
-
-A class representing a confusion matrix: it is returned by the `evaluate`
-and `leave_one_out` methods of `BinaryClassifier` instances, and contains
-just about every metric around.
+An abstract base class for binary classifiers; also includes a class 
+representing a confusion matrix, and a complex thresholding class used by
+many classifiers.
 
 `lda.py`
 ========
