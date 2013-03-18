@@ -25,7 +25,7 @@
 # variable X (represented as number), find a split-point which minimizes
 # classification error, and report classification statistics
 
-from binaryclassifier import BinaryClassifier, Threshold, NINF
+from binaryclassifier import AUC, BinaryClassifier, Threshold, NINF
 
 
 class Stump(BinaryClassifier):
