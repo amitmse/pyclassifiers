@@ -98,9 +98,9 @@ class LogisticRegression(BinaryClassifier):
 
     def train(self, X, Y, n_iter=100):
         self.W = LogisticRegression.Newton_Raphson(
-            array([[1.] + x for x in X]).T,
-            array([int(y == self.hit) for y in Y]),
-            n_iter=n_iter)
+                                    array([[1.] + x for x in X]).T,
+                                    array([int(y == self.hit) for y in Y]),
+                                    n_iter=n_iter)
 
     def score(self, x):
         return dot(self.W, array([1.] + x))
