@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -O
 #
 # Copyright (c) 2013 Kyle Gorman <gormanky@ohsu.edu>
 #
@@ -25,10 +25,11 @@
 # variable X (represented as number), find a split-point which minimizes
 # classification error, and report classification statistics
 
-from binaryclassifier import AUC, BinaryClassifier, Threshold, NINF
+from binaryclassifier import AUC, BinaryClassifier, Threshold, INF
 
 
 class Stump(BinaryClassifier):
+
     """
     Compute a classifier which makes a single "cut" in a continuous
     predictor vector X that splits the outcomes into "hit" and "miss"
@@ -61,7 +62,7 @@ class Stump(BinaryClassifier):
         """
         # init w/ leftmost column
         self.best_col = None  # index of most informative column in X
-        best_accuracy = NINF
+        best_accuracy = -INF
         # go through other columns
         for (i, col) in enumerate(zip(*X)):
             thresh = Threshold(col, Y, self.hit)

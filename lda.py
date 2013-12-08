@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -O
 #
 # Copyright (c) 2013 Kyle Gorman <gormanky@ohsu.edu>
 #
@@ -23,8 +23,7 @@
 #
 # lda.py: classification using a traditional linear discriminant
 
-from numpy.linalg import inv
-from numpy import cov, mean, dot
+from numpy import asmatrix, cov, mean, dot, ravel
 
 from binaryclassifier import AUC, BinaryClassifier, Threshold
 
@@ -53,11 +52,12 @@ class LDA(BinaryClassifier):
     """
 
     def __repr__(self):
-        W = ', '.join('{: 02.3f}'.format(w) for w in self.W)
-        return 'LDA(weights=[{}], {})'.format(W, self.thresh)
+        return '{}(weights=[{}], {})'.format(self.__class__.__name__,
+                    ', '.join('{: 02.3f}'.format(w) for w in self.W),
+                                                         self.thresh)
 
     def train(self, X, Y):
-        # construct table of values
+        # construct values tables
         table = {self.hit: [], self.miss: []}
         for (x, y) in zip(X, Y):
             table[y].append(x)
@@ -65,9 +65,10 @@ class LDA(BinaryClassifier):
         for col in (self.hit, self.miss):
             table[col] = zip(*table[col])
         # compute weights
-        self.W = dot(inv(cov(table[self.hit]) + cov(table[self.miss])),
-                     mean(table[self.hit], axis=1) -
-                     mean(table[self.miss], axis=1))
+        delta = mean(table[self.hit], 1) - mean(table[self.miss], 1)
+        invcv = asmatrix(cov(table[self.hit]) + cov(table[self.miss])).I
+        self.W = ravel(dot(invcv, delta))
+        # compute threshold using this weight function
         self.thresh = Threshold((self.score(x) for x in X), Y, self.hit)
 
     def score(self, x):

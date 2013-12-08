@@ -1,4 +1,4 @@
-#!/usr/bin/env python
+#!/usr/bin/env python -O
 #
 # Copyright (c) 2013 Kyle Gorman <gormanky@ohsu.edu>
 #
@@ -23,10 +23,7 @@
 #
 # binaryclassifier.py: An abstract class for a binary classifier, a class
 # representing a confusion matrix and associated binary classification
-# metrics, and a class representing a single-attribute threshold
-# finder
-#
-# Thanks to Constantine Lignos for his suggestions on this.
+# metrics, and a class representing a single-attribute threshold finder
 
 from __future__ import division
 
@@ -39,7 +36,6 @@ from itertools import combinations
 
 NAN = float('nan')
 INF = float('inf')
-NINF = -INF
 
 # user functions
 
@@ -80,6 +76,7 @@ def AUC(model_class, X, Y, **kwargs):
 
 
 class ConfusionMatrix(object):
+
     """
     Binary confusion matrix and various scoring methods
 
@@ -110,7 +107,7 @@ class ConfusionMatrix(object):
     def __len__(self):
         return self.tp + self.fp + self.fn + self.tn
 
-    ## aggregate scores
+    # aggregate scores
 
     @property
     def accuracy(self):
@@ -159,7 +156,7 @@ class ConfusionMatrix(object):
             return NAN
         return ((self.tp / N) - PS) / denom
 
-    ## specific scores
+    # specific scores
 
     # precision
 
@@ -229,6 +226,7 @@ class ConfusionMatrix(object):
 
 
 class BinaryClassifier(object):
+
     """
     Dummy class representing a binary classifier
     """
@@ -285,6 +283,7 @@ class BinaryClassifier(object):
 
 
 class Threshold(object):
+
     """
     Class representing a single split applied to a vector of continuous
     data, used to construct classifiers
@@ -316,11 +315,11 @@ class Threshold(object):
             return 'Threshold(HIT < {:.3} < MISS)'.format(self.split)
 
     def __init__(self, S, Y, hit):
-        (my_S, my_Y) = (list(i) for i in zip(*sorted(zip(S, 
-                                           (y == hit for y in Y)))))
+        (my_S, my_Y) = (list(i) for i in zip(*sorted(
+                                         zip(S, (y == hit for y in Y)))))
         N = len(my_Y)
         # initializing at the infinite left edge...
-        self.split = NINF
+        self.split = -INF
         upper_h = sum(my_Y)
         upper_m = N - upper_h
         self.upper_is_hit = (upper_h >= upper_m)
