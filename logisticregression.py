@@ -86,8 +86,8 @@ class LogisticRegression(BinaryClassifier):
             # first derivative
             dXdY = dot(X, Y - P)
             # magic update
-            W = old_W + ravel(dot(asmatrix(
-                                  dot(X * (P * (1. - P)), Xt)).I, dXdY))
+            W = old_W + ravel(asmatrix(X * (P * (1. - P))
+                                      ).dot(Xt).I.dot(dXdY))
             # compute log-likelihood
             L = sum(Y * log(P) + (1. - Y) * log(1. - P))
             # check for convergence by looking for a stable log-likelihood

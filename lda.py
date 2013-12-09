@@ -23,7 +23,7 @@
 #
 # lda.py: classification using a traditional linear discriminant
 
-from numpy import asmatrix, cov, mean, dot, ravel
+from numpy import asmatrix, cov, mean, ravel
 
 from binaryclassifier import AUC, BinaryClassifier, Threshold
 
@@ -66,8 +66,8 @@ class LDA(BinaryClassifier):
             table[col] = zip(*table[col])
         # compute weights
         delta = mean(table[self.hit], 1) - mean(table[self.miss], 1)
-        invcv = asmatrix(cov(table[self.hit]) + cov(table[self.miss])).I
-        self.W = ravel(dot(invcv, delta))
+        covar = asmatrix(cov(table[self.hit]) + cov(table[self.miss]))
+        self.W = ravel(covar.I.dot(delta))
         # compute threshold using this weight function
         self.thresh = Threshold((self.score(x) for x in X), Y, self.hit)
 
