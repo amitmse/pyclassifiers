@@ -205,7 +205,7 @@ class ConfusionMatrix(object):
 
     @property
     def FPR(self):
-        denom = self.fp + self.tp
+        denom = self.fp + self.tn
         if denom == 0:
             return INF
         return self.fp / denom
@@ -219,10 +219,7 @@ class ConfusionMatrix(object):
 
     @property
     def FDR(self):
-        denom = self.fp + self.tp
-        if denom == 0:
-            return INF
-        return self.fp / denom
+        return 1. - PPV
 
 
 class BinaryClassifier(object):
